@@ -1,0 +1,153 @@
+<?php
+
+/*
+ * Created by Alexis MÉNARD
+ * 26/10/2012
+ *
+ *
+ * ************
+ * Définition d'un nouveau type de field group : "div (extra)"
+ * L'essentiel est tiré du type "div", auquel on a ajouté un nouveau champ :
+ * "extra attributes" qui est ajouté au wrapper du field group.
+ * Notamment utile pour les microdata.
+ * ************
+ */
+
+/**
+ *
+ * Implements hook_field_group_formatter_info().
+ *
+ * Définition du nouveau type
+ *
+ * @return array
+ */
+function field_group_extra_field_group_formatter_info() {
+  return array(
+    'form' => array(
+      'div_extra' => array(
+        'label' => t('Div (extra)'),
+        'description' => t('Enhanced div field group type with extra attributes'),
+        'format_types' => array('open', 'collapsible', 'collapsed'),
+        // Seul véritable ajout ligne suivante : champ "extra_attributes".
+        'instance_settings' => array('description' => '', 'show_label' => 1, 'label_element' => 'h3', 'effect' => 'none', 'speed' => 'fast', 'classes' => '', 'required_fields' => 1, 'extra_attributes' => ''),
+        'default_formatter' => 'open',
+      )
+    ),
+    'display' => array(
+      'div_extra' => array(
+        'label' => t('Div (extra)'),
+        'description' => t('Enhanced div field group type with extra attributes'),
+        'format_types' => array('open', 'collapsible', 'collapsed'),
+        'instance_settings' => array('description' => '', 'show_label' => 1, 'label_element' => 'h3', 'effect' => 'none', 'speed' => 'fast', 'classes' => '', 'extra_attributes' => ''),
+        'default_formatter' => 'open'
+      )
+    )
+  );
+}
+
+/**
+ *
+ * Implements hook_field_group_format_settings().
+ *
+ * Définition du form de config du field group
+ *
+ * @param $group
+ * @return mixed
+ */
+function field_group_extra_field_group_format_settings($group) {
+  $form = array(
+    'instance_settings' => array(
+      '#tree' => TRUE,
+      '#weight' => 2,
+    ),
+  );
+  $field_group_types = field_group_formatter_info();
+  $mode = $group->mode == 'form' ? 'form' : 'display';
+  $formatter = $field_group_types[$mode][$group->format_type];
+
+  switch($group->format_type) {
+    case 'div_extra':
+      $form['instance_settings']['show_label'] = array(
+        '#title' => t('Show label'),
+        '#type' => 'select',
+        '#options' => array(0 => t('No'), 1 => t('Yes')),
+        '#default_value' => isset($group->format_settings['instance_settings']['show_label']) ? $group->format_settings['instance_settings']['show_label'] : $formatter['instance_settings']['show_label'],
+        '#weight' => 2,
+      );
+      $form['instance_settings']['label_element'] = array(
+        '#title' => t('Label element'),
+        '#type' => 'select',
+        '#options' => array('h2' => t('Header 2'), 'h3' => t('Header 3')),
+        '#default_value' => isset($group->format_settings['instance_settings']['label_element']) ? $group->format_settings['instance_settings']['label_element'] : $formatter['instance_settings']['label_element'],
+        '#weight' => 2,
+      );
+      $form['instance_settings']['effect'] = array(
+        '#title' => t('Effect'),
+        '#type' => 'select',
+        '#options' => array('none' => t('None'), 'blind' => t('Blind')),
+        '#default_value' => isset($group->format_settings['instance_settings']['effect']) ? $group->format_settings['instance_settings']['effect'] : $formatter['instance_settings']['effect'],
+        '#weight' => 2,
+      );
+      $form['instance_settings']['speed'] = array(
+        '#title' => t('Speed'),
+        '#type' => 'select',
+        '#options' => array('none' => t('None'), 'slow' => t('Slow'), 'fast' => t('Fast')),
+        '#default_value' => isset($group->format_settings['instance_settings']['speed']) ? $group->format_settings['instance_settings']['speed'] : $formatter['instance_settings']['speed'],
+        '#weight' => 3,
+      );
+      /*
+       * Ajout de l'extra...
+       * @todo Paires clé/valeurs multiples ?
+       */
+      $form['instance_settings']['extra_attributes'] = array(
+        '#title' => t('Extra attributes'),
+        '#type' => 'textfield',
+        '#default_value' => isset($group->format_settings['instance_settings']['extra_attributes']) ?
+          $group->format_settings['instance_settings']['extra_attributes'] :
+          '',
+        '#size' => 100
+      );
+      return $form;
+      break;
+  }
+}
+
+/*
+ *
+ * Implements field_group_pre_render_{TYPE}().
+ *
+ * Implémentation du render du field group de type "div_extra"
+ */
+function field_group_pre_render_div_extra(&$element, $group, &$form) {
+  $show_label = isset($group->format_settings['instance_settings']['show_label']) ? $group->format_settings['instance_settings']['show_label'] : 0;
+  $label_element = isset($group->format_settings['instance_settings']['label_element']) ? $group->format_settings['instance_settings']['label_element'] : 'h2';
+  $effect = isset($group->format_settings['instance_settings']['effect']) ? $group->format_settings['instance_settings']['effect'] : 'none';
+  $speed = isset($group->format_settings['instance_settings']['speed']) ? $group->format_settings['instance_settings']['speed'] : 'none';
+  $extra = isset($group->format_settings['instance_settings']['extra_attributes']) ? $group->format_settings['instance_settings']['extra_attributes'] : '';
+
+  $element['#type'] = 'markup';
+
+  $group->classes .= " speed-$speed effect-$effect";
+  if ($group->format_settings['formatter'] != 'open') {
+    // Différence : ajout des attributs extra
+    $element['#prefix'] = '<div '.$extra.' class="field-group-format ' . $group->classes . '">
+      <' . $label_element . '><span class="field-group-format-toggler">' . check_plain(t($group->label)) . '</span></' . $label_element . '>
+      <div class="field-group-format-wrapper" style="display: ' . ($group->collapsed ? 'none' : 'block') . ';">';
+    $element['#suffix'] = '</div></div>';
+  }
+  else {
+    // Différence : ajout des attributs extra
+    $element['#prefix'] = '<div '.$extra.' class="field-group-format ' . $group->group_name . ' ' . $group->classes . '">';
+    if ($show_label) {
+      $element['#prefix'] .= '<' . $label_element . '><span>' . check_plain(t($group->label)) . '</span></' . $label_element . '>';
+    }
+    $element['#suffix'] = '</div>';
+  }
+  if (!empty($group->description)) {
+    $element['#prefix'] .= '<div class="description">' . $group->description . '</div>';
+  }
+
+  if ($effect == 'blind') {
+    drupal_add_library('system', 'effects.blind');
+  }
+}

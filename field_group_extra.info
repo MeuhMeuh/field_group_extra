@@ -1,0 +1,6 @@
+name = Field Group Extra
+description = Provides a new field group's type with extra attributes field.
+core = 7.x
+package = Fields
+dependencies[] = field_group
+files[] = field_group_extra.module
