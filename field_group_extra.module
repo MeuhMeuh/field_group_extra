@@ -6,10 +6,14 @@
  *
  *
  * ************
- * Définition d'un nouveau type de field group : "div (extra)"
- * L'essentiel est tiré du type "div", auquel on a ajouté un nouveau champ :
- * "extra attributes" qui est ajouté au wrapper du field group.
- * Notamment utile pour les microdata.
+ * Defines a new field group type (name : "div (extra)")
+ * Most of the code is from built-in field group type "div".
+ * I just added another settings field : "extra_attributes" that
+ * permits you to add attributes to field group's wrapper.
+ * For example : itemprop="address" itemscope itemtype="http://data-vocabulary.org/Address"
+ * To add µdata address wrapper to your fieldgroup.
+ * Please note that this module adds these attributes with NO validation before.
+ * Please be careful when you add your data to close your quotation marks and so on.
  * ************
  */
 
